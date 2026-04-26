@@ -4,31 +4,49 @@ import javax.crypto.*;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
 
 public class MaHoaThayThe {
 
+    private String mapping = ClassicalCipherSupport.ALPHABET;
     SecretKey key;
 
     public SecretKey genKey() throws NoSuchAlgorithmException {
-        KeyGenerator kg = KeyGenerator.getInstance("MaHoaThayThe");
-        kg.init(...); //key size
-        key = kg.generateKey();
+        List<Character> chars = new ArrayList<>();
+        for (int i = 0; i < ClassicalCipherSupport.ALPHABET.length(); i++) {
+            chars.add(ClassicalCipherSupport.ALPHABET.charAt(i));
+        }
+        Collections.shuffle(chars, ClassicalCipherSupport.RANDOM);
+        StringBuilder sb = new StringBuilder(chars.size()); // key size: bảng thay thế có độ dài bằng bảng chữ cái
+        for (char c : chars) sb.append(c);
+        mapping = sb.toString();
+        key = ClassicalCipherSupport.keyFromString(mapping);
         return key;
     }
 
 
     public void loadKey(SecretKey key)    {
         this.key = key;
+        this.mapping = ClassicalCipherSupport.keyToString(key);
+        if (mapping.length() != ClassicalCipherSupport.ALPHABET.length()) {
+            throw new IllegalArgumentException("Khóa thay thế không hợp lệ");
+        }
     }
 
 
 
     public byte[] encrypt(String text) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher=Cipher.getInstance("MaHoaThayThe");
-        cipher.init(Cipher.ENCRYPT_MODE, this.key);
-        byte[] data= text.getBytes(StandardCharsets.UTF_8);
-        return cipher.doFinal(data);
+        char[] chars = text.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            if (ClassicalCipherSupport.isSupportedChar(chars[i])) {
+                int idx = ClassicalCipherSupport.indexOf(chars[i]);
+                chars[i] = mapping.charAt(idx);
+            }
+        }
+        return new String(chars).getBytes(StandardCharsets.UTF_8);
 
     }
 
@@ -38,10 +56,15 @@ public class MaHoaThayThe {
     }
 
     public String Decrypt(byte[] data) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher=Cipher.getInstance("MaHoaThayThe");
-        cipher.init(Cipher.DECRYPT_MODE, this.key);
-        byte[] bytes= cipher.doFinal(data);
-        return new String(bytes, StandardCharsets.UTF_8);
+        String cipherText = new String(data, StandardCharsets.UTF_8);
+        char[] chars = cipherText.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            int idx = mapping.indexOf(chars[i]);
+            if (idx >= 0) {
+                chars[i] = ClassicalCipherSupport.ALPHABET.charAt(idx);
+            }
+        }
+        return new String(chars);
     }
 
 

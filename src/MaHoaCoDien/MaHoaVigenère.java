@@ -9,26 +9,42 @@ import java.util.Base64;
 public class MaHoaVigenère {
 
     SecretKey key;
+    private String keyText = "KhoaBiMat";
 
     public SecretKey genKey() throws NoSuchAlgorithmException {
-        KeyGenerator kg = KeyGenerator.getInstance("MaHoaVigenère");
-        kg.init(...); //key size
-        key = kg.generateKey();
+        int keySize = 8; // key size: số ký tự trong khóa Vigenere
+        StringBuilder sb = new StringBuilder();
+        int m = ClassicalCipherSupport.alphabetSize();
+        for (int i = 0; i < keySize; i++) {
+            sb.append(ClassicalCipherSupport.at(ClassicalCipherSupport.RANDOM.nextInt(m / 2)));
+        }
+        keyText = sb.toString();
+        key = ClassicalCipherSupport.keyFromString(keyText);
         return key;
     }
 
 
     public void loadKey(SecretKey key)    {
         this.key = key;
+        this.keyText = ClassicalCipherSupport.keyToString(key);
     }
 
 
 
     public byte[] encrypt(String text) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher=Cipher.getInstance("MaHoaVigenère");
-        cipher.init(Cipher.ENCRYPT_MODE, this.key);
-        byte[] data= text.getBytes(StandardCharsets.UTF_8);
-        return cipher.doFinal(data);
+        char[] chars = text.toCharArray();
+        int j = 0;
+        for (int i = 0; i < chars.length; i++) {
+            if (!ClassicalCipherSupport.isSupportedChar(chars[i])) {
+                continue;
+            }
+            char k = keyText.charAt(j % keyText.length());
+            int shift = ClassicalCipherSupport.indexOf(k);
+            int idx = ClassicalCipherSupport.indexOf(chars[i]);
+            chars[i] = ClassicalCipherSupport.at(idx + shift);
+            j++;
+        }
+        return new String(chars).getBytes(StandardCharsets.UTF_8);
 
     }
 
@@ -38,10 +54,20 @@ public class MaHoaVigenère {
     }
 
     public String Decrypt(byte[] data) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher=Cipher.getInstance("MaHoaVigenère");
-        cipher.init(Cipher.DECRYPT_MODE, this.key);
-        byte[] bytes= cipher.doFinal(data);
-        return new String(bytes, StandardCharsets.UTF_8);
+        String cipherText = new String(data, StandardCharsets.UTF_8);
+        char[] chars = cipherText.toCharArray();
+        int j = 0;
+        for (int i = 0; i < chars.length; i++) {
+            if (!ClassicalCipherSupport.isSupportedChar(chars[i])) {
+                continue;
+            }
+            char k = keyText.charAt(j % keyText.length());
+            int shift = ClassicalCipherSupport.indexOf(k);
+            int idx = ClassicalCipherSupport.indexOf(chars[i]);
+            chars[i] = ClassicalCipherSupport.at(idx - shift);
+            j++;
+        }
+        return new String(chars);
     }
 
 }
