@@ -1,4 +1,4 @@
-package MaHoaHienDai;
+package MaHoaHienDai.MaHoaDoiXung;
 
 import javax.crypto.*;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +10,7 @@ public class ABS {
     SecretKey key;
 
     public SecretKey genKey() throws NoSuchAlgorithmException {
-        KeyGenerator kg = KeyGenerator.getInstance("MaHoaVigenère");
+        KeyGenerator kg = KeyGenerator.getInstance("ABS");
         //kg.init(...); //key size
         key = kg.generateKey();
         return key;
@@ -24,7 +24,7 @@ public class ABS {
 
 
     public byte[] encrypt(String text) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher=Cipher.getInstance("MaHoaVigenère");
+        Cipher cipher=Cipher.getInstance("ABS");
         cipher.init(Cipher.ENCRYPT_MODE, this.key);
         byte[] data= text.getBytes(StandardCharsets.UTF_8);
         return cipher.doFinal(data);
@@ -37,7 +37,7 @@ public class ABS {
     }
 
     public String Decrypt(byte[] data) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher=Cipher.getInstance("MaHoaVigenère");
+        Cipher cipher=Cipher.getInstance("ABS");
         cipher.init(Cipher.DECRYPT_MODE, this.key);
         byte[] bytes= cipher.doFinal(data);
         return new String(bytes, StandardCharsets.UTF_8);
