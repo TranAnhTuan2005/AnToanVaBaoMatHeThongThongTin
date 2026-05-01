@@ -7,11 +7,11 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
-public class ABS {
+public class AES {
     SecretKey key;
 
     public SecretKey genKey() throws NoSuchAlgorithmException {
-        KeyGenerator kg = KeyGenerator.getInstance("ABS");
+        KeyGenerator kg = KeyGenerator.getInstance("");
         //kg.init(...); //key size
         key = kg.generateKey();
         return key;
