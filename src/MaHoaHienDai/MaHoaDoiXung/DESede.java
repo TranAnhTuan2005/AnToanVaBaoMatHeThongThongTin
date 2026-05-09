@@ -1,7 +1,6 @@
 package MaHoaHienDai.MaHoaDoiXung;
 
 import javax.crypto.*;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -11,32 +10,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-public class AES {
+public class DESede {
     private SecretKey key;
-    private final String mode;
-    private final String transformation;
-    private final int keySize;
-    private final int ivSize;
-
-    public AES(String mode, int keySize) {
-        this.mode = mode;
-        this.keySize = keySize;
-        if (mode.equalsIgnoreCase("GCM")) {
-            this.transformation = "AES/GCM/NoPadding";
-            this.ivSize = 12;
-        } else {
-            this.transformation = "AES/CBC/PKCS5Padding";
-            this.ivSize = 16;
-        }
-    }
-
-    public AES() {
-        this("CBC", 256);
-    }
+    private final String transformation = "DESede/CBC/PKCS5Padding";
+    private final int ivSize = 8;
 
     public SecretKey genKey() throws NoSuchAlgorithmException {
-        KeyGenerator kg = KeyGenerator.getInstance("AES");
-        kg.init(keySize);
+        KeyGenerator kg = KeyGenerator.getInstance("DESede");
+        kg.init(168);
         key = kg.generateKey();
         return key;
     }
@@ -55,11 +36,7 @@ public class AES {
             InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
         byte[] iv = genIV();
         Cipher cipher = Cipher.getInstance(transformation);
-        if (mode.equalsIgnoreCase("GCM")) {
-            cipher.init(Cipher.ENCRYPT_MODE, this.key, new GCMParameterSpec(128, iv));
-        } else {
-            cipher.init(Cipher.ENCRYPT_MODE, this.key, new IvParameterSpec(iv));
-        }
+        cipher.init(Cipher.ENCRYPT_MODE, this.key, new IvParameterSpec(iv));
         byte[] encrypted = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
         byte[] result = new byte[iv.length + encrypted.length];
         System.arraycopy(iv, 0, result, 0, iv.length);
@@ -80,11 +57,7 @@ public class AES {
         System.arraycopy(data, ivSize, encrypted, 0, encrypted.length);
 
         Cipher cipher = Cipher.getInstance(transformation);
-        if (mode.equalsIgnoreCase("GCM")) {
-            cipher.init(Cipher.DECRYPT_MODE, this.key, new GCMParameterSpec(128, iv));
-        } else {
-            cipher.init(Cipher.DECRYPT_MODE, this.key, new IvParameterSpec(iv));
-        }
+        cipher.init(Cipher.DECRYPT_MODE, this.key, new IvParameterSpec(iv));
         byte[] decrypted = cipher.doFinal(encrypted);
         return new String(decrypted, StandardCharsets.UTF_8);
     }
@@ -93,11 +66,7 @@ public class AES {
             InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
         byte[] iv = genIV();
         Cipher cipher = Cipher.getInstance(transformation);
-        if (mode.equalsIgnoreCase("GCM")) {
-            cipher.init(Cipher.ENCRYPT_MODE, this.key, new GCMParameterSpec(128, iv));
-        } else {
-            cipher.init(Cipher.ENCRYPT_MODE, this.key, new IvParameterSpec(iv));
-        }
+        cipher.init(Cipher.ENCRYPT_MODE, this.key, new IvParameterSpec(iv));
 
         try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(src));
              BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(dest))) {
@@ -123,11 +92,7 @@ public class AES {
             input.read(iv);
 
             Cipher cipher = Cipher.getInstance(transformation);
-            if (mode.equalsIgnoreCase("GCM")) {
-                cipher.init(Cipher.DECRYPT_MODE, this.key, new GCMParameterSpec(128, iv));
-            } else {
-                cipher.init(Cipher.DECRYPT_MODE, this.key, new IvParameterSpec(iv));
-            }
+            cipher.init(Cipher.DECRYPT_MODE, this.key, new IvParameterSpec(iv));
 
             byte[] buffer = new byte[1024];
             int len;
