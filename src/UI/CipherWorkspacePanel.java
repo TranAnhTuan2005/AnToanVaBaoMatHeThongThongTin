@@ -3,7 +3,9 @@ package UI;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 public class CipherWorkspacePanel extends JPanel {
     private final JLabel titleLabel = new JLabel("Crypto Tool");
     private final JLabel subTitleLabel = new JLabel("Chọn một giải thuật từ thanh bên trái để bắt đầu");
@@ -69,6 +71,8 @@ public class CipherWorkspacePanel extends JPanel {
         keyRow.add(keyField, BorderLayout.CENTER);
 
         JButton generateBtn = new JButton("Sinh key");
+        JButton loadKeyBtn = new JButton("Tải key");
+        JButton saveKeyBtn = new JButton("Lưu key");
         JButton encryptBtn = new JButton("Mã hóa ➜");
         JButton decryptBtn = new JButton("⇦ Giải mã");
         JButton clearBtn = new JButton("Xóa");
@@ -76,6 +80,8 @@ public class CipherWorkspacePanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         actions.setOpaque(false);
         actions.add(generateBtn);
+        actions.add(loadKeyBtn);
+        actions.add(saveKeyBtn);
         actions.add(encryptBtn);
         actions.add(decryptBtn);
         actions.add(clearBtn);
@@ -98,6 +104,8 @@ public class CipherWorkspacePanel extends JPanel {
         workPanel.add(split, BorderLayout.CENTER);
 
         generateBtn.addActionListener(e -> onGenerate());
+        loadKeyBtn.addActionListener(e -> onLoadKey());
+        saveKeyBtn.addActionListener(e -> onSaveKey());
         encryptBtn.addActionListener(e -> onEncrypt());
         decryptBtn.addActionListener(e -> onDecrypt());
         clearBtn.addActionListener(e -> {
@@ -134,6 +142,45 @@ public class CipherWorkspacePanel extends JPanel {
             keyField.setText(activeAdapter.generateKey());
         } catch (Exception ex) {
             showError("Không thể sinh key", ex);
+        }
+    }
+    private void onLoadKey() {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Tải key từ file");
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                byte[] raw = Files.readAllBytes(fc.getSelectedFile().toPath());
+                String text = new String(raw, StandardCharsets.UTF_8).trim();
+                keyField.setText(text);
+                JOptionPane.showMessageDialog(this,
+                        "Đã tải key thành công từ:\n" + fc.getSelectedFile().getName(),
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                showError("Không thể tải key", ex);
+            }
+        }
+    }
+
+    private void onSaveKey() {
+        String key = keyField.getText().trim();
+        if (key.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Chưa có key để lưu. Vui lòng sinh hoặc nhập key trước.",
+                    "Thiếu key", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Lưu key ra file");
+        fc.setSelectedFile(new File("key.txt"));
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                Files.write(fc.getSelectedFile().toPath(), key.getBytes(StandardCharsets.UTF_8));
+                JOptionPane.showMessageDialog(this,
+                        "Đã lưu key thành công tại:\n" + fc.getSelectedFile().getAbsolutePath(),
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                showError("Không thể lưu key", ex);
+            }
         }
     }
 
