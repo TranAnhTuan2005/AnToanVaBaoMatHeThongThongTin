@@ -1,4 +1,6 @@
-package UI;
+package UI.Main;
+
+import UI.CryptoToolFrame;
 
 import javax.swing.*;
 
