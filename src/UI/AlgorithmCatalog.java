@@ -27,6 +27,9 @@ public final class AlgorithmCatalog {
         items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "DES", modern, ModernSymmetricCiphers.des()));
         items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "DESede (3DES)", modern, ModernSymmetricCiphers.desede()));
         items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "ChaCha20-Poly1305", modern, ModernSymmetricCiphers.chacha20()));
+        items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "Blowfish", modern, ModernSymmetricCiphers.blowfish()));
+        items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "RC2", modern, ModernSymmetricCiphers.rc2()));
+        items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "RC4 (ARCFOUR)", modern, ModernSymmetricCiphers.rc4()));
 
         return items;
     }

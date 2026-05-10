@@ -35,6 +35,22 @@ public final class ModernSymmetricCiphers {
         return new ChaCha20Impl();
     }
 
+    public static ModernSymmetricCipher blowfish() {
+        return new BlockCipherImpl("Blowfish",
+                new String[]{"CBC", "ECB", "CFB", "OFB"},
+                new int[]{128, 192, 256, 448}, 8);
+    }
+
+    public static ModernSymmetricCipher rc2() {
+        return new BlockCipherImpl("RC2",
+                new String[]{"CBC", "ECB", "CFB", "OFB"},
+                new int[]{40, 64, 128}, 8);
+    }
+
+    public static ModernSymmetricCipher rc4() {
+        return new RC4Impl();
+    }
+
     private static class BlockCipherImpl implements ModernSymmetricCipher {
         private final String algorithm;
         private final String[] modes;
@@ -286,6 +302,100 @@ public final class ModernSymmetricCiphers {
                 byte[] iv = new byte[12];
                 in.read(iv);
                 Cipher cipher = initCipher(Cipher.DECRYPT_MODE, keyBytes, iv);
+                byte[] buf = new byte[4096];
+                int len;
+                while ((len = in.read(buf)) != -1) {
+                    byte[] updated = cipher.update(buf, 0, len);
+                    if (updated != null) out.write(updated);
+                }
+                byte[] fin = cipher.doFinal();
+                if (fin != null) out.write(fin);
+                out.flush();
+            }
+        }
+    }
+
+    private static class RC4Impl implements ModernSymmetricCipher {
+        @Override
+        public String algorithmName() {
+            return "RC4 (ARCFOUR)";
+        }
+
+        @Override
+        public String[] supportedModes() {
+            return new String[]{"None"};
+        }
+
+        @Override
+        public String[] supportedPaddings(String mode) {
+            return new String[]{"NoPadding"};
+        }
+
+        @Override
+        public int[] supportedKeySizes() {
+            return new int[]{40, 56, 64, 128, 256};
+        }
+
+        @Override
+        public boolean needsIV(String mode) {
+            return false;
+        }
+
+        @Override
+        public int getIVSize(String mode) {
+            return 0;
+        }
+
+        @Override
+        public String generateKeyBase64(int keySize) throws Exception {
+            KeyGenerator kg = KeyGenerator.getInstance("ARCFOUR");
+            kg.init(keySize);
+            return Base64.getEncoder().encodeToString(kg.generateKey().getEncoded());
+        }
+
+        @Override
+        public String encryptText(String plainText, String keyBase64, String mode, String padding) throws Exception {
+            byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+            Cipher cipher = Cipher.getInstance("ARCFOUR");
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "ARCFOUR"));
+            return Base64.getEncoder().encodeToString(cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8)));
+        }
+
+        @Override
+        public String decryptText(String cipherBase64, String keyBase64, String mode, String padding) throws Exception {
+            byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+            byte[] data = Base64.getDecoder().decode(cipherBase64);
+            Cipher cipher = Cipher.getInstance("ARCFOUR");
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "ARCFOUR"));
+            return new String(cipher.doFinal(data), StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public void encryptFile(String src, String dest, String keyBase64, String mode, String padding) throws Exception {
+            byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+            Cipher cipher = Cipher.getInstance("ARCFOUR");
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "ARCFOUR"));
+            try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(src));
+                 BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest))) {
+                byte[] buf = new byte[4096];
+                int len;
+                while ((len = in.read(buf)) != -1) {
+                    byte[] updated = cipher.update(buf, 0, len);
+                    if (updated != null) out.write(updated);
+                }
+                byte[] fin = cipher.doFinal();
+                if (fin != null) out.write(fin);
+                out.flush();
+            }
+        }
+
+        @Override
+        public void decryptFile(String src, String dest, String keyBase64, String mode, String padding) throws Exception {
+            byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+            Cipher cipher = Cipher.getInstance("ARCFOUR");
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "ARCFOUR"));
+            try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(src));
+                 BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest))) {
                 byte[] buf = new byte[4096];
                 int len;
                 while ((len = in.read(buf)) != -1) {
