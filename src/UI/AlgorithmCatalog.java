@@ -30,6 +30,11 @@ public final class AlgorithmCatalog {
         items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "Blowfish", modern, ModernSymmetricCiphers.blowfish()));
         items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "RC2", modern, ModernSymmetricCiphers.rc2()));
         items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "RC4 (ARCFOUR)", modern, ModernSymmetricCiphers.rc4()));
+        items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "Twofish", modern, ModernSymmetricCiphers.twofish()));
+        items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "Serpent", modern, ModernSymmetricCiphers.serpent()));
+        items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "Camellia", modern, ModernSymmetricCiphers.camellia()));
+        items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "IDEA", modern, ModernSymmetricCiphers.idea()));
+        items.add(new AlgorithmItem("MÃ HÓA HIỆN ĐẠI ĐỐI XỨNG", "ARIA", modern, ModernSymmetricCiphers.aria()));
 
         return items;
     }

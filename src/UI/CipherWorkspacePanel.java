@@ -14,6 +14,7 @@ public class CipherWorkspacePanel extends JPanel {
     private final JTextArea inputArea = new JTextArea();
     private final JTextArea outputArea = new JTextArea();
     private final JLabel hintLabel = new JLabel();
+    private final JLabel panelTitle = new JLabel("Mã hóa cổ điển");
 
     private final JPanel welcomePanel = new JPanel(new GridBagLayout());
     private final JPanel workPanel = new JPanel(new BorderLayout(8, 8));
@@ -52,7 +53,6 @@ public class CipherWorkspacePanel extends JPanel {
         workPanel.setBackground(new Color(245, 245, 245));
         workPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        JLabel panelTitle = new JLabel("Mã hóa / Giải mã");
         panelTitle.setFont(new Font("SansSerif", Font.BOLD, 24));
 
         hintLabel.setForeground(new Color(106, 115, 125));
@@ -129,6 +129,7 @@ public class CipherWorkspacePanel extends JPanel {
 
     public void setAlgorithm(AlgorithmItem item) {
         activeAdapter = item.adapter();
+        panelTitle.setText("Mã hóa cổ điển — " + item.displayName());
         hintLabel.setText("Gợi ý key: " + activeAdapter.keyHint());
         inputArea.setText("");
         outputArea.setText("");
