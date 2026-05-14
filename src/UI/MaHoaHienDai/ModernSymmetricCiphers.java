@@ -12,7 +12,10 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Base64;
 
+// Factory tạo các ModernSymmetricCipher cho từng thuật toán
 public final class ModernSymmetricCiphers {
+
+    // Đăng ký BouncyCastle cho các cipher ngoài JDK (Twofish, Serpent,...)
     static {
         if (Security.getProvider("BC") == null)
             Security.addProvider(new BouncyCastleProvider());
@@ -20,6 +23,8 @@ public final class ModernSymmetricCiphers {
 
     private ModernSymmetricCiphers() {
     }
+
+    // --- Factory methods cho từng thuật toán ---
 
     public static ModernSymmetricCipher aes() {
         return new BlockCipherImpl("AES",
@@ -59,6 +64,7 @@ public final class ModernSymmetricCiphers {
         return new RC4Impl();
     }
 
+    // Các cipher dưới đây dùng BouncyCastle provider
     public static ModernSymmetricCipher twofish() {
         return new BCBlockCipherImpl("Twofish",
                 new String[]{"CBC", "ECB", "CTR", "CFB", "OFB"},
@@ -89,11 +95,12 @@ public final class ModernSymmetricCiphers {
                 new int[]{128, 192, 256}, 16);
     }
 
+    // ===== Impl cho các block cipher thuộc JDK (AES, DES, Blowfish, RC2,...) =====
     private static class BlockCipherImpl implements ModernSymmetricCipher {
         private final String algorithm;
         private final String[] modes;
         private final int[] keySizes;
-        private final int blockSize;
+        private final int blockSize; // byte
 
         BlockCipherImpl(String algorithm, String[] modes, int[] keySizes, int blockSize) {
             this.algorithm = algorithm;
@@ -131,10 +138,11 @@ public final class ModernSymmetricCiphers {
 
         @Override
         public int getIVSize(String mode) {
-            if ("GCM".equals(mode)) return 12;
+            if ("GCM".equals(mode)) return 12; // GCM dùng 12 byte nonce
             return blockSize;
         }
 
+        // Sinh key ngẫu nhiên
         @Override
         public String generateKeyBase64(int keySize) throws Exception {
             KeyGenerator kg = KeyGenerator.getInstance(algorithm);
@@ -142,6 +150,7 @@ public final class ModernSymmetricCiphers {
             return Base64.getEncoder().encodeToString(kg.generateKey().getEncoded());
         }
 
+        // Khởi tạo Cipher với key, mode, padding và IV
         private Cipher initCipher(int opmode, byte[] keyBytes, String mode, String padding, byte[] iv) throws Exception {
             String trans = algorithm + "/" + mode + "/" + padding;
             Cipher cipher = Cipher.getInstance(trans);
@@ -156,6 +165,7 @@ public final class ModernSymmetricCiphers {
             return cipher;
         }
 
+        // Mã hóa text: tạo IV ngẫu nhiên, ghép IV + ciphertext rồi encode Base64
         @Override
         public String encryptText(String plainText, String keyBase64, String mode, String padding) throws Exception {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
@@ -167,6 +177,7 @@ public final class ModernSymmetricCiphers {
             Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, keyBytes, mode, padding, iv);
             byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
             if (iv != null) {
+                // ghép iv + ciphertext
                 byte[] result = new byte[iv.length + encrypted.length];
                 System.arraycopy(iv, 0, result, 0, iv.length);
                 System.arraycopy(encrypted, 0, result, iv.length, encrypted.length);
@@ -175,6 +186,7 @@ public final class ModernSymmetricCiphers {
             return Base64.getEncoder().encodeToString(encrypted);
         }
 
+        // Giải mã text: tách IV từ đầu data, rồi giải mã phần còn lại
         @Override
         public String decryptText(String cipherBase64, String keyBase64, String mode, String padding) throws Exception {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
@@ -194,6 +206,7 @@ public final class ModernSymmetricCiphers {
             return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
         }
 
+        // Mã hóa file: ghi IV đầu file, sau đó stream data qua cipher
         @Override
         public void encryptFile(String src, String dest, String keyBase64, String mode, String padding) throws Exception {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
@@ -218,6 +231,7 @@ public final class ModernSymmetricCiphers {
             }
         }
 
+        // Giải mã file: đọc IV đầu file, sau đó stream data qua cipher
         @Override
         public void decryptFile(String src, String dest, String keyBase64, String mode, String padding) throws Exception {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
@@ -242,6 +256,7 @@ public final class ModernSymmetricCiphers {
         }
     }
 
+    // ===== Impl riêng cho ChaCha20-Poly1305 (stream cipher, luôn cần nonce 12 byte) =====
     private static class ChaCha20Impl implements ModernSymmetricCipher {
         @Override
         public String algorithmName() {
@@ -280,21 +295,23 @@ public final class ModernSymmetricCiphers {
             return Base64.getEncoder().encodeToString(kg.generateKey().getEncoded());
         }
 
-        private Cipher initCipher(int opmode, byte[] keyBytes, byte[] iv) throws Exception {
+        // Tạo Cipher cho ChaCha20-Poly1305
+        private Cipher initCipher(int opmode, byte[] keyBytes, byte[] nonce) throws Exception {
             Cipher cipher = Cipher.getInstance("ChaCha20-Poly1305");
-            cipher.init(opmode, new SecretKeySpec(keyBytes, "ChaCha20"), new IvParameterSpec(iv));
+            cipher.init(opmode, new SecretKeySpec(keyBytes, "ChaCha20"), new IvParameterSpec(nonce));
             return cipher;
         }
 
         @Override
         public String encryptText(String plainText, String keyBase64, String mode, String padding) throws Exception {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
-            byte[] iv = new byte[12];
-            new SecureRandom().nextBytes(iv);
-            Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, keyBytes, iv);
+            byte[] nonce = new byte[12];
+            new SecureRandom().nextBytes(nonce);
+            Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, keyBytes, nonce);
             byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
+            // ghép nonce + ciphertext
             byte[] result = new byte[12 + encrypted.length];
-            System.arraycopy(iv, 0, result, 0, 12);
+            System.arraycopy(nonce, 0, result, 0, 12);
             System.arraycopy(encrypted, 0, result, 12, encrypted.length);
             return Base64.getEncoder().encodeToString(result);
         }
@@ -303,23 +320,24 @@ public final class ModernSymmetricCiphers {
         public String decryptText(String cipherBase64, String keyBase64, String mode, String padding) throws Exception {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
             byte[] data = Base64.getDecoder().decode(cipherBase64);
-            byte[] iv = new byte[12];
-            System.arraycopy(data, 0, iv, 0, 12);
+            // tách nonce 12 byte đầu
+            byte[] nonce = new byte[12];
+            System.arraycopy(data, 0, nonce, 0, 12);
             byte[] encrypted = new byte[data.length - 12];
             System.arraycopy(data, 12, encrypted, 0, encrypted.length);
-            Cipher cipher = initCipher(Cipher.DECRYPT_MODE, keyBytes, iv);
+            Cipher cipher = initCipher(Cipher.DECRYPT_MODE, keyBytes, nonce);
             return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
         }
 
         @Override
         public void encryptFile(String src, String dest, String keyBase64, String mode, String padding) throws Exception {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
-            byte[] iv = new byte[12];
-            new SecureRandom().nextBytes(iv);
-            Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, keyBytes, iv);
+            byte[] nonce = new byte[12];
+            new SecureRandom().nextBytes(nonce);
+            Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, keyBytes, nonce);
             try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(src));
                  BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest))) {
-                out.write(iv);
+                out.write(nonce); // ghi nonce đầu file
                 byte[] buf = new byte[4096];
                 int len;
                 while ((len = in.read(buf)) != -1) {
@@ -337,9 +355,9 @@ public final class ModernSymmetricCiphers {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
             try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(src));
                  BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest))) {
-                byte[] iv = new byte[12];
-                in.read(iv);
-                Cipher cipher = initCipher(Cipher.DECRYPT_MODE, keyBytes, iv);
+                byte[] nonce = new byte[12];
+                in.read(nonce); // đọc nonce đầu file
+                Cipher cipher = initCipher(Cipher.DECRYPT_MODE, keyBytes, nonce);
                 byte[] buf = new byte[4096];
                 int len;
                 while ((len = in.read(buf)) != -1) {
@@ -353,6 +371,7 @@ public final class ModernSymmetricCiphers {
         }
     }
 
+    // ===== Impl riêng cho RC4 (stream cipher, không cần IV/mode) =====
     private static class RC4Impl implements ModernSymmetricCipher {
         @Override
         public String algorithmName() {
@@ -410,28 +429,19 @@ public final class ModernSymmetricCiphers {
 
         @Override
         public void encryptFile(String src, String dest, String keyBase64, String mode, String padding) throws Exception {
-            byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
-            Cipher cipher = Cipher.getInstance("ARCFOUR");
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "ARCFOUR"));
-            try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(src));
-                 BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest))) {
-                byte[] buf = new byte[4096];
-                int len;
-                while ((len = in.read(buf)) != -1) {
-                    byte[] updated = cipher.update(buf, 0, len);
-                    if (updated != null) out.write(updated);
-                }
-                byte[] fin = cipher.doFinal();
-                if (fin != null) out.write(fin);
-                out.flush();
-            }
+            processFile(Cipher.ENCRYPT_MODE, src, dest, keyBase64);
         }
 
         @Override
         public void decryptFile(String src, String dest, String keyBase64, String mode, String padding) throws Exception {
+            processFile(Cipher.DECRYPT_MODE, src, dest, keyBase64);
+        }
+
+        // RC4 mã hóa và giải mã giống nhau, nên dùng chung 1 method
+        private void processFile(int opmode, String src, String dest, String keyBase64) throws Exception {
             byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
             Cipher cipher = Cipher.getInstance("ARCFOUR");
-            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "ARCFOUR"));
+            cipher.init(opmode, new SecretKeySpec(keyBytes, "ARCFOUR"));
             try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(src));
                  BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest))) {
                 byte[] buf = new byte[4096];
@@ -447,6 +457,7 @@ public final class ModernSymmetricCiphers {
         }
     }
 
+    // ===== Impl cho các block cipher thuộc BouncyCastle (Twofish, Serpent, Camellia,...) =====
     private static class BCBlockCipherImpl implements ModernSymmetricCipher {
         private final String algorithm;
         private final String[] modes;
@@ -472,8 +483,7 @@ public final class ModernSymmetricCiphers {
 
         @Override
         public String[] supportedPaddings(String mode) {
-            if ("CTR".equals(mode))
-                return new String[]{"NoPadding"};
+            if ("CTR".equals(mode)) return new String[]{"NoPadding"};
             return new String[]{"PKCS5Padding", "NoPadding"};
         }
 
@@ -492,6 +502,7 @@ public final class ModernSymmetricCiphers {
             return blockSize;
         }
 
+        // Sinh key qua BouncyCastle provider
         @Override
         public String generateKeyBase64(int keySize) throws Exception {
             KeyGenerator kg = KeyGenerator.getInstance(algorithm, "BC");
@@ -499,6 +510,7 @@ public final class ModernSymmetricCiphers {
             return Base64.getEncoder().encodeToString(kg.generateKey().getEncoded());
         }
 
+        // Khởi tạo Cipher qua BouncyCastle provider
         private Cipher initCipher(int opmode, byte[] keyBytes, String mode, String padding, byte[] iv) throws Exception {
             String trans = algorithm + "/" + mode + "/" + padding;
             Cipher cipher = Cipher.getInstance(trans, "BC");

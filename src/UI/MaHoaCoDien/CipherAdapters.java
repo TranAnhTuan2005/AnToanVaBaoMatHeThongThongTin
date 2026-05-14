@@ -1,4 +1,4 @@
-package UI;
+package UI.MaHoaCoDien;
 
 import MaHoaCoDien.*;
 
@@ -11,14 +11,16 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
+// Factory tạo CipherAdapter cho từng thuật toán mã hóa cổ điển
 public final class CipherAdapters {
-    private CipherAdapters() {
-    }
+    private CipherAdapters() {}
 
+    // Tạo SecretKey từ chuỗi text (dùng chung cho các adapter)
     private static SecretKey rawKey(String keyText) {
         return new SecretKeySpec(keyText.getBytes(StandardCharsets.UTF_8), "RAW");
     }
 
+    // Adapter cho mã hóa dịch chuyển (Caesar/Shift cipher)
     public static CipherAdapter dichChuyen() {
         return new CipherAdapter() {
             @Override
@@ -42,12 +44,11 @@ public final class CipherAdapters {
             }
 
             @Override
-            public String keyHint() {
-                return "Số nguyên dịch chuyển, ví dụ: 5";
-            }
+            public String keyHint() { return "Số nguyên dịch chuyển, ví dụ: 5"; }
         };
     }
 
+    // Adapter cho mã hóa thay thế (Substitution cipher)
     public static CipherAdapter thayThe() {
         return new CipherAdapter() {
             @Override
@@ -72,12 +73,11 @@ public final class CipherAdapters {
             }
 
             @Override
-            public String keyHint() {
-                return "Chuỗi mapping cùng độ dài bảng chữ cái (khuyên dùng: Sinh key)";
-            }
+            public String keyHint() { return "Chuỗi mapping cùng độ dài bảng chữ cái (khuyên dùng: Sinh key)"; }
         };
     }
 
+    // Adapter cho mã hóa Affine
     public static CipherAdapter affine() {
         return new CipherAdapter() {
             @Override
@@ -101,12 +101,11 @@ public final class CipherAdapters {
             }
 
             @Override
-            public String keyHint() {
-                return "Dạng a:b, ví dụ 5:8";
-            }
+            public String keyHint() { return "Dạng a:b, ví dụ 5:8"; }
         };
     }
 
+    // Adapter cho mã hóa Vigenère
     public static CipherAdapter vigenere() {
         return new CipherAdapter() {
             @Override
@@ -130,12 +129,11 @@ public final class CipherAdapters {
             }
 
             @Override
-            public String keyHint() {
-                return "Chuỗi key, ví dụ: KhoaBiMat";
-            }
+            public String keyHint() { return "Chuỗi key, ví dụ: KhoaBiMat"; }
         };
     }
 
+    // Adapter cho mã hóa Hill (dùng ma trận 2x2)
     public static CipherAdapter hill() {
         return new CipherAdapter() {
             @Override
@@ -159,12 +157,11 @@ public final class CipherAdapters {
             }
 
             @Override
-            public String keyHint() {
-                return "Ma trận 2x2 dạng a,b,c,d, ví dụ 3,3,2,5";
-            }
+            public String keyHint() { return "Ma trận 2x2 dạng a,b,c,d, ví dụ 3,3,2,5"; }
         };
     }
 
+    // Adapter cho mã hóa hoán vị (Transposition cipher)
     public static CipherAdapter hoanVi() {
         return new CipherAdapter() {
             @Override
@@ -188,9 +185,7 @@ public final class CipherAdapters {
             }
 
             @Override
-            public String keyHint() {
-                return "Dãy hoán vị cách nhau bởi dấu phẩy, ví dụ: 2,0,1,3,5,4";
-            }
+            public String keyHint() { return "Dãy hoán vị cách nhau bởi dấu phẩy, ví dụ: 2,0,1,3,5,4"; }
         };
     }
 }

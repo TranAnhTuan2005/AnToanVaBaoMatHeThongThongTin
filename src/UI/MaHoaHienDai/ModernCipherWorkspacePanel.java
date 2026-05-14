@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+// Panel workspace cho mã hóa hiện đại đối xứng (AES, DES, Blowfish,...)
 public class ModernCipherWorkspacePanel extends JPanel {
     private final JLabel titleLabel = new JLabel("Crypto Tool");
     private final JLabel subTitleLabel = new JLabel("Chọn một giải thuật mã hóa hiện đại đối xứng");
@@ -17,19 +18,24 @@ public class ModernCipherWorkspacePanel extends JPanel {
     private final JPanel workPanel = new JPanel(new BorderLayout(8, 8));
     private final CardLayout cardLayout = new CardLayout();
 
+    // combo box cấu hình Mode/Padding/KeySize
     private final JComboBox<String> modeCombo = new JComboBox<>();
     private final JComboBox<String> paddingCombo = new JComboBox<>();
     private final JComboBox<String> keySizeCombo = new JComboBox<>();
     private final JTextField keyField = new JTextField();
+
+    // vùng nhập/xuất text
     private final JTextArea inputArea = new JTextArea();
     private final JTextArea outputArea = new JTextArea();
+
+    // trường nhập file
     private final JTextField inputFileField = new JTextField();
     private final JTextField outputFileField = new JTextField();
     private final JLabel statusLabel = new JLabel(" ");
     private final JLabel panelTitle = new JLabel("Mã hóa hiện đại đối xứng");
 
     private ModernSymmetricCipher activeCipher;
-    private boolean updatingCombos = false;
+    private boolean updatingCombos = false; // cờ tránh trigger event khi đang cập nhật combo
 
     public ModernCipherWorkspacePanel() {
         setLayout(cardLayout);
@@ -41,6 +47,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         showWelcome("Crypto Tool", "Chọn một giải thuật mã hóa hiện đại đối xứng");
     }
 
+    // Dựng panel chào mừng
     private void buildWelcomePanel() {
         welcomePanel.setBackground(new Color(238, 238, 238));
         JPanel box = new JPanel();
@@ -59,6 +66,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         welcomePanel.add(box);
     }
 
+    // Dựng panel làm việc: cấu hình mode/padding/keysize + 2 tab text/file
     private void buildWorkPanel() {
         workPanel.setBackground(new Color(245, 245, 245));
         workPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
@@ -72,6 +80,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         north.add(panelTitle);
         north.add(Box.createVerticalStrut(12));
 
+        // hàng cấu hình: Mode, Padding, Key size
         JPanel configRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         configRow.setOpaque(false);
         configRow.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -88,6 +97,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         north.add(configRow);
         north.add(Box.createVerticalStrut(10));
 
+        // hàng nhập key Base64 + nút sinh/tải/lưu key
         JPanel keyRow = new JPanel(new BorderLayout(8, 0));
         keyRow.setOpaque(false);
         keyRow.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -108,11 +118,13 @@ public class ModernCipherWorkspacePanel extends JPanel {
 
         workPanel.add(north, BorderLayout.NORTH);
 
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Văn bản", buildTextTab());
-        tabbedPane.addTab("Tệp tin", buildFileTab());
-        workPanel.add(tabbedPane, BorderLayout.CENTER);
+        // 2 tab: văn bản và tệp tin
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("Văn bản", buildTextTab());
+        tabs.addTab("Tệp tin", buildFileTab());
+        workPanel.add(tabs, BorderLayout.CENTER);
 
+        // gắn sự kiện
         modeCombo.addActionListener(e -> {
             if (!updatingCombos) onModeChanged();
         });
@@ -121,6 +133,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         saveKeyBtn.addActionListener(e -> onSaveKey());
     }
 
+    // Tab mã hóa/giải mã văn bản
     private JPanel buildTextTab() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(new EmptyBorder(8, 0, 0, 0));
@@ -132,8 +145,8 @@ public class ModernCipherWorkspacePanel extends JPanel {
         outputArea.setWrapStyleWord(true);
 
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                titled("Input", new JScrollPane(inputArea)),
-                titled("Output", new JScrollPane(outputArea)));
+                wrapWithTitle("Input", new JScrollPane(inputArea)),
+                wrapWithTitle("Output", new JScrollPane(outputArea)));
         split.setResizeWeight(0.5);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
@@ -157,12 +170,14 @@ public class ModernCipherWorkspacePanel extends JPanel {
         return panel;
     }
 
+    // Tab mã hóa/giải mã file
     private JPanel buildFileTab() {
         JPanel panel = new JPanel();
         panel.setOpaque(false);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(16, 0, 0, 0));
 
+        // chọn file nguồn
         JPanel inputRow = new JPanel(new BorderLayout(8, 0));
         inputRow.setOpaque(false);
         inputRow.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -174,6 +189,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         panel.add(inputRow);
         panel.add(Box.createVerticalStrut(10));
 
+        // chọn file đích
         JPanel outputRow = new JPanel(new BorderLayout(8, 0));
         outputRow.setOpaque(false);
         outputRow.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -200,6 +216,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         panel.add(statusLabel);
         panel.add(Box.createVerticalGlue());
 
+        // sự kiện chọn file
         browseIn.addActionListener(e -> {
             JFileChooser fc = new JFileChooser();
             if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
@@ -216,29 +233,34 @@ public class ModernCipherWorkspacePanel extends JPanel {
         return panel;
     }
 
+    // Tạo JLabel có chiều rộng cố định
     private JLabel fixedLabel(String text) {
         JLabel label = new JLabel(text);
         label.setPreferredSize(new Dimension(90, 28));
         return label;
     }
 
-    private JPanel titled(String title, JComponent content) {
+    // Bọc component trong panel có border title
+    private JPanel wrapWithTitle(String title, JComponent content) {
         JPanel p = new JPanel(new BorderLayout());
         p.setBorder(BorderFactory.createTitledBorder(title));
         p.add(content, BorderLayout.CENTER);
         return p;
     }
 
+    // Hiện màn hình chào mừng
     public void showWelcome(String title, String message) {
         titleLabel.setText(title);
         subTitleLabel.setText(message);
         cardLayout.show(this, "welcome");
     }
 
+    // Chuyển sang thuật toán được chọn, cập nhật combo box mode/padding/keysize
     public void setAlgorithm(AlgorithmItem item) {
         activeCipher = item.modernCipher();
         panelTitle.setText("Mã hóa hiện đại đối xứng — " + activeCipher.algorithmName());
 
+        // cập nhật combo box (tắt event listener tạm thời)
         updatingCombos = true;
         modeCombo.removeAllItems();
         for (String m : activeCipher.supportedModes()) modeCombo.addItem(m);
@@ -247,8 +269,9 @@ public class ModernCipherWorkspacePanel extends JPanel {
         for (int s : activeCipher.supportedKeySizes()) keySizeCombo.addItem(String.valueOf(s));
         keySizeCombo.setSelectedIndex(keySizeCombo.getItemCount() - 1);
         updatingCombos = false;
-        onModeChanged();
+        onModeChanged(); // cập nhật padding theo mode đã chọn
 
+        // reset các ô nhập liệu
         keyField.setText("");
         inputArea.setText("");
         outputArea.setText("");
@@ -258,6 +281,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         cardLayout.show(this, "work");
     }
 
+    // Khi đổi mode thì cập nhật lại danh sách padding
     private void onModeChanged() {
         if (activeCipher == null) return;
         String mode = (String) modeCombo.getSelectedItem();
@@ -268,19 +292,15 @@ public class ModernCipherWorkspacePanel extends JPanel {
         updatingCombos = false;
     }
 
-    private String getMode() {
-        return (String) modeCombo.getSelectedItem();
-    }
-
-    private String getPadding() {
-        return (String) paddingCombo.getSelectedItem();
-    }
+    private String getMode() { return (String) modeCombo.getSelectedItem(); }
+    private String getPadding() { return (String) paddingCombo.getSelectedItem(); }
 
     private int getKeySize() {
         String s = (String) keySizeCombo.getSelectedItem();
         return s != null ? Integer.parseInt(s) : 256;
     }
 
+    // Sinh key ngẫu nhiên theo key size đã chọn
     private void onGenKey() {
         if (activeCipher == null) return;
         try {
@@ -290,6 +310,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Tải key từ file (tự detect Base64 hay raw bytes)
     private void onLoadKey() {
         JFileChooser fc = new JFileChooser();
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -298,9 +319,9 @@ public class ModernCipherWorkspacePanel extends JPanel {
                 String text = new String(raw, StandardCharsets.UTF_8).trim();
                 try {
                     java.util.Base64.getDecoder().decode(text);
-                    keyField.setText(text);
+                    keyField.setText(text); // file chứa Base64
                 } catch (IllegalArgumentException e) {
-                    keyField.setText(java.util.Base64.getEncoder().encodeToString(raw));
+                    keyField.setText(java.util.Base64.getEncoder().encodeToString(raw)); // file chứa raw bytes
                 }
             } catch (IOException ex) {
                 showError("Không thể đọc file key", ex);
@@ -308,30 +329,35 @@ public class ModernCipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Lưu key Base64 ra file
     private void onSaveKey() {
         String key = keyField.getText().trim();
         if (key.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Chưa có key để lưu.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Chưa có key để lưu.",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
         JFileChooser fc = new JFileChooser();
         if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
                 Files.write(fc.getSelectedFile().toPath(), key.getBytes(StandardCharsets.UTF_8));
-                JOptionPane.showMessageDialog(this, "Đã lưu key thành công.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Đã lưu key thành công.",
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException ex) {
                 showError("Không thể lưu key", ex);
             }
         }
     }
 
+    // Mã hóa văn bản
     private void onEncryptText() {
         if (activeCipher == null) return;
         try {
             String key = keyField.getText().trim();
             String plain = inputArea.getText();
             if (plain.isEmpty() || key.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập text và key.", "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập text và key.",
+                        "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             outputArea.setText(activeCipher.encryptText(plain, key, getMode(), getPadding()));
@@ -340,13 +366,15 @@ public class ModernCipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Giải mã văn bản
     private void onDecryptText() {
         if (activeCipher == null) return;
         try {
             String key = keyField.getText().trim();
             String cipher = outputArea.getText().trim();
             if (cipher.isEmpty() || key.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập output text và key.", "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập output text và key.",
+                        "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             inputArea.setText(activeCipher.decryptText(cipher, key, getMode(), getPadding()));
@@ -355,6 +383,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Mã hóa file
     private void onEncryptFile() {
         if (activeCipher == null) return;
         try {
@@ -362,7 +391,8 @@ public class ModernCipherWorkspacePanel extends JPanel {
             String src = inputFileField.getText().trim();
             String dest = outputFileField.getText().trim();
             if (key.isEmpty() || src.isEmpty() || dest.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ key, file nguồn và file đích.", "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ key, file nguồn và file đích.",
+                        "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             activeCipher.encryptFile(src, dest, key, getMode(), getPadding());
@@ -374,6 +404,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Giải mã file
     private void onDecryptFile() {
         if (activeCipher == null) return;
         try {
@@ -381,7 +412,8 @@ public class ModernCipherWorkspacePanel extends JPanel {
             String src = inputFileField.getText().trim();
             String dest = outputFileField.getText().trim();
             if (key.isEmpty() || src.isEmpty() || dest.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ key, file nguồn và file đích.", "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ key, file nguồn và file đích.",
+                        "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             activeCipher.decryptFile(src, dest, key, getMode(), getPadding());
@@ -393,6 +425,7 @@ public class ModernCipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Hiện dialog lỗi
     private void showError(String title, Exception ex) {
         JOptionPane.showMessageDialog(this,
                 title + "\n" + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);

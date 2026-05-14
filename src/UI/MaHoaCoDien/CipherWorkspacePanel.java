@@ -1,4 +1,6 @@
-package UI;
+package UI.MaHoaCoDien;
+
+import UI.AlgorithmItem;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -6,6 +8,8 @@ import java.awt.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+
+// Panel workspace cho phần mã hóa cổ điển (Shift, Substitution, Affine,...)
 public class CipherWorkspacePanel extends JPanel {
     private final JLabel titleLabel = new JLabel("Crypto Tool");
     private final JLabel subTitleLabel = new JLabel("Chọn một giải thuật từ thanh bên trái để bắt đầu");
@@ -31,6 +35,7 @@ public class CipherWorkspacePanel extends JPanel {
         showWelcome("Crypto Tool", "Chọn một giải thuật từ thanh bên trái để bắt đầu");
     }
 
+    // Dựng panel chào mừng (hiển thị khi chưa chọn thuật toán)
     private void buildWelcomePanel() {
         welcomePanel.setBackground(new Color(238, 238, 238));
         JPanel box = new JPanel();
@@ -49,12 +54,12 @@ public class CipherWorkspacePanel extends JPanel {
         welcomePanel.add(box);
     }
 
+    // Dựng panel làm việc chính: ô key, nút hành động, input/output
     private void buildWorkPanel() {
         workPanel.setBackground(new Color(245, 245, 245));
         workPanel.setBorder(new EmptyBorder(18, 18, 18, 18));
 
         panelTitle.setFont(new Font("SansSerif", Font.BOLD, 24));
-
         hintLabel.setForeground(new Color(106, 115, 125));
 
         JPanel north = new JPanel();
@@ -65,11 +70,13 @@ public class CipherWorkspacePanel extends JPanel {
         north.add(hintLabel);
         north.add(Box.createVerticalStrut(12));
 
+        // hàng nhập key
         JPanel keyRow = new JPanel(new BorderLayout(8, 8));
         keyRow.setOpaque(false);
         keyRow.add(new JLabel("Khóa:"), BorderLayout.WEST);
         keyRow.add(keyField, BorderLayout.CENTER);
 
+        // các nút chức năng
         JButton generateBtn = new JButton("Sinh key");
         JButton loadKeyBtn = new JButton("Tải key");
         JButton saveKeyBtn = new JButton("Lưu key");
@@ -95,14 +102,16 @@ public class CipherWorkspacePanel extends JPanel {
         outputArea.setLineWrap(true);
         outputArea.setWrapStyleWord(true);
 
+        // chia đôi input/output
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                panelWithTitle("Input text", new JScrollPane(inputArea)),
-                panelWithTitle("Output text", new JScrollPane(outputArea)));
+                wrapWithTitle("Input text", new JScrollPane(inputArea)),
+                wrapWithTitle("Output text", new JScrollPane(outputArea)));
         split.setResizeWeight(0.5);
 
         workPanel.add(north, BorderLayout.NORTH);
         workPanel.add(split, BorderLayout.CENTER);
 
+        // gắn sự kiện cho các nút
         generateBtn.addActionListener(e -> onGenerate());
         loadKeyBtn.addActionListener(e -> onLoadKey());
         saveKeyBtn.addActionListener(e -> onSaveKey());
@@ -114,19 +123,22 @@ public class CipherWorkspacePanel extends JPanel {
         });
     }
 
-    private JPanel panelWithTitle(String title, JComponent content) {
+    // Bọc component trong panel có border title
+    private JPanel wrapWithTitle(String title, JComponent content) {
         JPanel p = new JPanel(new BorderLayout());
         p.setBorder(BorderFactory.createTitledBorder(title));
         p.add(content, BorderLayout.CENTER);
         return p;
     }
 
+    // Hiện màn hình chào mừng
     public void showWelcome(String title, String message) {
         titleLabel.setText(title);
         subTitleLabel.setText(message);
         cardLayout.show(this, "welcome");
     }
 
+    // Chuyển sang thuật toán được chọn, cập nhật giao diện
     public void setAlgorithm(AlgorithmItem item) {
         activeAdapter = item.adapter();
         panelTitle.setText("Mã hóa cổ điển — " + item.displayName());
@@ -137,6 +149,7 @@ public class CipherWorkspacePanel extends JPanel {
         cardLayout.show(this, "work");
     }
 
+    // Sinh key ngẫu nhiên
     private void onGenerate() {
         if (activeAdapter == null) return;
         try {
@@ -145,6 +158,8 @@ public class CipherWorkspacePanel extends JPanel {
             showError("Không thể sinh key", ex);
         }
     }
+
+    // Tải key từ file
     private void onLoadKey() {
         JFileChooser fc = new JFileChooser();
         fc.setDialogTitle("Tải key từ file");
@@ -162,6 +177,7 @@ public class CipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Lưu key hiện tại ra file
     private void onSaveKey() {
         String key = keyField.getText().trim();
         if (key.isEmpty()) {
@@ -185,13 +201,15 @@ public class CipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Mã hóa input text bằng key hiện tại
     private void onEncrypt() {
         if (activeAdapter == null) return;
         try {
             String key = keyField.getText().trim();
             String plain = inputArea.getText();
             if (plain.isEmpty() || key.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập input text và key.", "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập input text và key.",
+                        "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             outputArea.setText(activeAdapter.encrypt(plain, key));
@@ -200,13 +218,15 @@ public class CipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Giải mã output text bằng key hiện tại
     private void onDecrypt() {
         if (activeAdapter == null) return;
         try {
             String key = keyField.getText().trim();
             String cipher = outputArea.getText();
             if (cipher.isEmpty() || key.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập output text và key.", "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập output text và key.",
+                        "Thiếu dữ liệu", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             inputArea.setText(activeAdapter.decrypt(cipher, key));
@@ -215,10 +235,9 @@ public class CipherWorkspacePanel extends JPanel {
         }
     }
 
+    // Hiện dialog lỗi
     private void showError(String title, Exception ex) {
         JOptionPane.showMessageDialog(this,
-                title + "\n" + ex.getMessage(),
-                "Lỗi",
-                JOptionPane.ERROR_MESSAGE);
+                title + "\n" + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 }
